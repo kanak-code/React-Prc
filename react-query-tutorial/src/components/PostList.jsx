@@ -1,21 +1,23 @@
 /* eslint-disable no-unused-vars */
+import React, { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import React from 'react'
 import { addPost, fetchPosts, fetchTags } from '../api/api'
 
 const PostList = () => {
-
+    const [page, setPage] = useState(1);
     const queryClient = useQueryClient();
 
+
     const { data: postData, isLoading, isError, error } = useQuery({
-        queryKey: ['posts'],
-        queryFn: fetchPosts
+        queryKey: ['posts', { page }],
+        queryFn: () => fetchPosts(page)
     });
 
 
     const { data: tagsData } = useQuery({
         queryKey: ['tags'],
-        queryFn: fetchTags
+        queryFn: fetchTags,
+        staleTime: Infinity
     })
 
     const {
@@ -49,7 +51,7 @@ const PostList = () => {
 
         if (!title || !tags) return;
 
-        mutate({ id: postData?.items + 1, title, tags });
+        mutate({ id: postData?.data?.length + 1, title, tags });
 
         e.target.reset(); // reset form
 
@@ -68,9 +70,9 @@ const PostList = () => {
                 />
 
                 <div className="tags">
-                    {tagsData?.map((tag) => {
+                    {tagsData?.map((tag, index) => {
                         return (
-                            <div key={tag}>
+                            <div key={index}>
                                 <input name={tag} id={tag} type="checkbox" />
                                 <label htmlFor={tag}>{tag}</label>
                             </div>
@@ -78,14 +80,15 @@ const PostList = () => {
                     })}
                 </div>
 
-                <button>
-                    POST
+                <button disabled={isPending}>
+                    {isPending ? "Posting..." : "Post"}
                 </button>
             </form>
 
             {isLoading && <p>Loading...</p>}
             {isError && <p>{error?.message}</p>}
-            {postData?.map((post) => {
+            {isPostError && <p onClick={reset}>Uneble to post</p>}
+            {postData?.data?.map((post) => {
                 return (
                     <div key={post.id} className="post">
                         <div>{post.title}</div>
@@ -95,6 +98,24 @@ const PostList = () => {
                     </div>
                 );
             })}
+
+            {/* Pagination */}
+            <div className="pages">
+                <button
+                    onClick={() => setPage((oldPage) => Math.max(oldPage - 1, 0))}
+                    disabled={!postData?.prev}
+                >
+                    Previous Page
+                </button>
+
+                <span>{page}</span>
+                <button
+                    onClick={() => setPage((oldPage) => oldPage + 1)}
+                    disabled={!postData?.next}
+                >
+                    Next Page
+                </button>
+            </div>
         </div>
     )
 }

@@ -21,7 +21,7 @@ const fetchPosts = async (page) => {
   
   const addPost = async (post) => {
     console.log('post>>> ', post);
-    const response = await fetch("http://localhost:3000/posts", {
+    const response = await fetch("http://localhost:3000/posts ", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
